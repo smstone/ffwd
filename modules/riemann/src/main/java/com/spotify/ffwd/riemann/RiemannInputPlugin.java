@@ -21,6 +21,8 @@ import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.PrivateModule;
 import com.google.inject.Scopes;
+import com.spotify.ffwd.Plugin;
+import com.spotify.ffwd.filter.Filter;
 import com.spotify.ffwd.input.InputPlugin;
 import com.spotify.ffwd.input.PluginSource;
 import com.spotify.ffwd.protocol.Protocol;
@@ -34,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.slf4j.Logger;
 
 @Slf4j
-public class RiemannInputPlugin implements InputPlugin {
+public class RiemannInputPlugin extends Plugin implements InputPlugin {
     private static final ProtocolType DEFAULT_PROTOCOL = ProtocolType.TCP;
     private static final int DEFAULT_PORT = 5555;
 
@@ -44,8 +46,10 @@ public class RiemannInputPlugin implements InputPlugin {
 
     @JsonCreator
     public RiemannInputPlugin(
-        @JsonProperty("protocol") ProtocolFactory protocol, @JsonProperty("retry") RetryPolicy retry
+        @JsonProperty("protocol") ProtocolFactory protocol, @JsonProperty("retry") RetryPolicy retry,
+        @JsonProperty("filter") Optional<Filter> filter
     ) {
+        super("", filter);
         this.protocol = Optional
             .ofNullable(protocol)
             .orElseGet(ProtocolFactory.defaultFor())

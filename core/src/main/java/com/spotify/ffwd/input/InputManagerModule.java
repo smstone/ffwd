@@ -26,6 +26,7 @@ import com.google.inject.Scopes;
 import com.google.inject.Singleton;
 import com.google.inject.multibindings.Multibinder;
 import com.google.inject.name.Names;
+import com.spotify.ffwd.Plugin;
 import com.spotify.ffwd.filter.Filter;
 import com.spotify.ffwd.filter.TrueFilter;
 import com.spotify.ffwd.statistics.CoreStatistics;
@@ -87,7 +88,7 @@ public class InputManagerModule {
                 int i = 0;
 
                 for (final InputPlugin p : plugins) {
-                    final String id = p.id(i++);
+                    final String id = ((Plugin) p).id(i++);
                     final Key<PluginSource> k = Key.get(PluginSource.class, Names.named(id));
                     install(p.module(k, id));
                     sources.addBinding().to(k);

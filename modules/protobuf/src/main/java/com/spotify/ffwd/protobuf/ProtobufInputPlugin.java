@@ -21,6 +21,8 @@ import com.google.inject.Key;
 import com.google.inject.Module;
 import com.google.inject.PrivateModule;
 import com.google.inject.Scopes;
+import com.spotify.ffwd.Plugin;
+import com.spotify.ffwd.filter.Filter;
 import com.spotify.ffwd.input.InputPlugin;
 import com.spotify.ffwd.input.PluginSource;
 import com.spotify.ffwd.protocol.Protocol;
@@ -30,7 +32,7 @@ import com.spotify.ffwd.protocol.ProtocolType;
 import com.spotify.ffwd.protocol.RetryPolicy;
 import java.util.Optional;
 
-public class ProtobufInputPlugin implements InputPlugin {
+public class ProtobufInputPlugin extends Plugin implements InputPlugin {
     private static final ProtocolType DEFAULT_PROTOCOL = ProtocolType.UDP;
     private static final int DEFAULT_PORT = 19091;
 
@@ -40,8 +42,10 @@ public class ProtobufInputPlugin implements InputPlugin {
 
     @JsonCreator
     public ProtobufInputPlugin(
-        @JsonProperty("protocol") ProtocolFactory protocol, @JsonProperty("retry") RetryPolicy retry
+        @JsonProperty("protocol") ProtocolFactory protocol, @JsonProperty("retry") RetryPolicy retry,
+        @JsonProperty("filter") Optional<Filter> filter
     ) {
+        super("", filter);
         this.protocol = Optional
             .ofNullable(protocol)
             .orElseGet(ProtocolFactory.defaultFor())

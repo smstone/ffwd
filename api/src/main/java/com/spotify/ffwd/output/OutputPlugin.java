@@ -18,12 +18,61 @@ package com.spotify.ffwd.output;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.As;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
+import com.google.inject.Inject;
 import com.google.inject.Key;
 import com.google.inject.Module;
+import com.google.inject.PrivateModule;
+import com.google.inject.name.Named;
+import com.google.inject.name.Names;
+import com.spotify.ffwd.Plugin;
+import com.spotify.ffwd.filter.Filter;
+import java.util.Optional;
 
 @JsonTypeInfo(use = Id.NAME, include = As.PROPERTY, property = "type")
-public interface OutputPlugin {
-    public Module module(Key<PluginSink> key, String id);
+public abstract class OutputPlugin extends Plugin {
+    
+    protected final Optional<Long> flushInterval;
+    
+    public OutputPlugin() {
+        super("", Optional.empty());
+        flushInterval = Optional.empty();
+    }
 
-    public String id(int index);
+    public OutputPlugin(
+        final String id, final Optional<Filter> filter, final Optional<Long> flushInterval
+    ) {
+        super(id, filter);
+        this.flushInterval = flushInterval;
+    }
+
+    protected Module wrapPluginSink(
+        final Key<? extends PluginSink> input, final Key<PluginSink> output
+    ) {
+        return new PrivateModule() {
+            @Override
+            protected void configure() {
+                Key<PluginSink> sinkKey = (Key<PluginSink>) input;
+
+                if (flushInterval.isPresent() || BatchedPluginSink.class.isAssignableFrom(
+                    sinkKey.getTypeLiteral().getRawType())) {
+                    final Key<PluginSink> flushingKey = Key.get(PluginSink.class, Names.named("flushing"));
+                    install(new OutputDelegatingModule<>(sinkKey, flushingKey,
+                        new FlushingPluginSink(flushInterval.get())));
+                    sinkKey = flushingKey;
+                }
+
+                if (filter.isPresent()) {
+                    final Key<PluginSink> filteringKey = Key.get(PluginSink.class, Names.named("filtered"));
+                    install(new OutputDelegatingModule<>(sinkKey, filteringKey,
+                        new FilteringPluginSink(filter.get())));
+                    sinkKey = filteringKey;
+                }
+
+                bind(output).to(sinkKey);
+                expose(output);
+            }
+        };
+    }
+
+    public abstract Module module(Key<PluginSink> key, String id);
 }

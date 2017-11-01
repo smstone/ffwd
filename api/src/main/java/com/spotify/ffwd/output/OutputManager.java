@@ -25,19 +25,19 @@ public interface OutputManager extends Initializable {
     /**
      * Send a collection of events to all output plugins.
      */
-    public void sendEvent(Event event);
+    void sendEvent(Event event);
 
     /**
      * Send a collection of metrics to all output plugins.
      */
-    public void sendMetric(Metric metric);
+    void sendMetric(Metric metric);
 
     /**
      * Send a batch collection of metrics to all output plugins.
      */
-    public void sendBatch(Batch batch);
+    void sendBatch(Batch batch);
 
-    public AsyncFuture<Void> start();
+    AsyncFuture<Void> start();
 
-    public AsyncFuture<Void> stop();
+    AsyncFuture<Void> stop();
 }

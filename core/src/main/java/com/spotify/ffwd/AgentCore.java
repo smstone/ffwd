@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.AbstractModule;
@@ -78,7 +79,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -151,7 +151,7 @@ public class AgentCore {
     }
 
     private void start(final Injector primary)
-        throws Exception, InterruptedException, ExecutionException {
+        throws Exception {
         final InputManager input = primary.getInstance(InputManager.class);
         final OutputManager output = primary.getInstance(OutputManager.class);
         final DebugServer debug = primary.getInstance(DebugServer.class);
@@ -213,7 +213,7 @@ public class AgentCore {
                 filters.put("key", new MatchKey.Deserializer());
                 filters.put("=", new MatchTag.Deserializer());
                 filters.put("true", new TrueFilter.Deserializer());
-                filters.put("false", new TrueFilter.Deserializer());
+                filters.put("false", new NotFilter.Deserializer());
                 filters.put("and", new AndFilter.Deserializer());
                 filters.put("or", new OrFilter.Deserializer());
                 filters.put("not", new NotFilter.Deserializer());
@@ -223,7 +223,7 @@ public class AgentCore {
 
             @Singleton
             @Provides
-            @Named("application/yaml+config")
+            @Named("config")
             public SimpleModule configModule(
                 Map<String, FilterDeserializer.PartialDeserializer> filters
             ) {
@@ -372,8 +372,9 @@ public class AgentCore {
     private AgentConfig readConfig(Injector early) throws IOException {
         final ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
         final SimpleModule module =
-            early.getInstance(Key.get(SimpleModule.class, Names.named("application/yaml+config")));
+            early.getInstance(Key.get(SimpleModule.class, Names.named("config")));
 
+        mapper.registerModule(new Jdk8Module());
         mapper.registerModule(module);
 
         try (final InputStream input = Files.newInputStream(this.config)) {
